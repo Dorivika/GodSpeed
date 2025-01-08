@@ -33,3 +33,4 @@ private:
     std::unordered_map<int, std::thread> clientThreads;
     MessageHandler messageHandler;
 };
+}

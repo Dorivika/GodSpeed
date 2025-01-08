@@ -19,8 +19,10 @@ if (WIN32)
     target_link_libraries(NetworkingLibrary ws2_32)
 endif()
 
-# Add test executable
+# Add test executables
 add_executable(NetworkUtilsTest tests/NetworkUtilsTest.cpp)
+add_executable(TcpServerTest tests/TcpServerTest.cpp)
 
-# Link the library to the test executable
+# Link the library to the test executables
 target_link_libraries(NetworkUtilsTest NetworkingLibrary)
+target_link_libraries(TcpServerTest NetworkingLibrary)
