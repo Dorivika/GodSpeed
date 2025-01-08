@@ -2,6 +2,7 @@
 #include <thread>
 #include <chrono>
 #include <cassert>
+#include <vector>
 #include "../include/TcpServer.h"
 #ifdef _WIN32
     #include <winsock2.h>
@@ -13,7 +14,7 @@
     #include <unistd.h>
 #endif
 
-void clientFunction(const std::string& message) {
+void clientFunction(const std::string& message, int clientId) {
     std::this_thread::sleep_for(std::chrono::seconds(1)); // Wait for server to start
 
     int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -33,7 +34,7 @@ void clientFunction(const std::string& message) {
     int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
     buffer[bytesRead] = '\0';
 
-    std::cout << "Received from server: " << buffer << std::endl;
+    std::cout << "Client " << clientId << " received from server: " << buffer << std::endl;
 
 #ifdef _WIN32
     closesocket(clientSocket);
@@ -52,9 +53,17 @@ int main() {
     assert(server.start());
     std::cout << "Server started" << std::endl;
 
-    std::thread clientThread(clientFunction, "Hello, Server!");
+    const int numClients = 5;
+    std::vector<std::thread> clientThreads;
 
-    clientThread.join();
+    for (int i = 0; i < numClients; ++i) {
+        clientThreads.emplace_back(clientFunction, "Hello from client " + std::to_string(i), i);
+    }
+
+    for (auto& thread : clientThreads) {
+        thread.join();
+    }
+
     server.stop();
     std::cout << "Server stopped" << std::endl;
 
