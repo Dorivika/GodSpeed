@@ -1,5 +1,3 @@
-
-// src/TcpServer.cpp
 #include "TcpServer.h"
 #include "NetworkUtils.h"
 #include <iostream>
@@ -17,7 +15,7 @@
 
 namespace networking {
 
-TcpServer::TcpServer(int port) : port(port), running(false), serverSocket(-1) {
+TcpServer::TcpServer(int port) : port(port), running(false), serverSocket(INVALID_SOCKET) {
 #ifdef _WIN32
     NetworkUtils::initializeWinsock();
 #endif
@@ -29,7 +27,7 @@ TcpServer::~TcpServer() {
 
 bool TcpServer::start() {
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (serverSocket < 0) {
+    if (serverSocket == INVALID_SOCKET) {
         return false;
     }
 
@@ -38,11 +36,11 @@ bool TcpServer::start() {
     serverAddr.sin_addr.s_addr = INADDR_ANY;
     serverAddr.sin_port = htons(port);
 
-    if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
+    if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
         return false;
     }
 
-    if (listen(serverSocket, 5) < 0) {
+    if (listen(serverSocket, 5) == SOCKET_ERROR) {
         return false;
     }
 
@@ -82,17 +80,20 @@ void TcpServer::acceptClients() {
         struct sockaddr_in clientAddr;
         socklen_t clientLen = sizeof(clientAddr);
         
-        int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientLen);
-        if (clientSocket < 0) {
+        SOCKET clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientLen);
+        if (clientSocket == INVALID_SOCKET) {
+            if (!running) {
+                break; // Exit the loop if the server is stopping
+            }
             continue;
         }
 
         std::lock_guard<std::mutex> lock(clientsMutex);
-        clientThreads[clientSocket] = std::thread(&TcpServer::handleClient, this, clientSocket, clientSocket);
+        clientThreads[clientSocket] = std::thread(&TcpServer::handleClient, this, clientSocket, static_cast<int>(clientSocket));
     }
 }
 
-void TcpServer::handleClient(int clientSocket, int clientId) {
+void TcpServer::handleClient(SOCKET clientSocket, int clientId) {
     char buffer[4096];
     while (running) {
         int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);

@@ -1,4 +1,3 @@
-// include/TcpServer.h
 #pragma once
 #include <string>
 #include <vector>
@@ -6,6 +5,12 @@
 #include <mutex>
 #include <functional>
 #include <unordered_map>
+
+#ifdef _WIN32
+    #include <winsock2.h>
+#else
+    #include <sys/socket.h>
+#endif
 
 namespace networking {
 
@@ -23,14 +28,15 @@ public:
 
 private:
     void acceptClients();
-    void handleClient(int clientSocket, int clientId);
+    void handleClient(SOCKET clientSocket, int clientId);
     
-    int serverSocket;
+    SOCKET serverSocket;
     int port;
     bool running;
     std::thread acceptThread;
     std::mutex clientsMutex;
-    std::unordered_map<int, std::thread> clientThreads;
+    std::unordered_map<SOCKET, std::thread> clientThreads;
     MessageHandler messageHandler;
 };
-}
+
+} // namespace networking

@@ -17,8 +17,8 @@
 void clientFunction(const std::string& message, int clientId) {
     std::this_thread::sleep_for(std::chrono::seconds(1)); // Wait for server to start
 
-    int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-    assert(clientSocket >= 0);
+    SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+    assert(clientSocket != INVALID_SOCKET);
 
     struct sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
@@ -28,7 +28,7 @@ void clientFunction(const std::string& message, int clientId) {
     int result = connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
     assert(result >= 0);
 
-    send(clientSocket, message.c_str(), message.size(), 0);
+    send(clientSocket, message.c_str(), static_cast<int>(message.size()), 0);
 
     char buffer[4096];
     int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
