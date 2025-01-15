@@ -25,8 +25,9 @@ NetworkingLibrary/
 │   ├── UdpSocket.cpp
 │   ├── NetworkUtils.cpp
 ├── tests/            # Unit tests
+│   ├── Networkutils.cpp
 │   ├── TcpServerTest.cpp
-│   ├── TcpClientTest.cpp
+|   ├── TcpClientTest.cpp
 │   ├── UdpSocketTest.cpp
 ├── examples/         # Example programs
 │   ├── TcpExample.cpp

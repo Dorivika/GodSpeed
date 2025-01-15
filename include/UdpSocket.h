@@ -1,6 +1,12 @@
 #pragma once
 #include <string>
 
+#ifdef _WIN32
+    #include <winsock2.h>
+#else
+    #include <sys/socket.h>
+#endif
+
 namespace networking {
 
 class UdpSocket {
@@ -13,7 +19,7 @@ public:
     bool receive(std::string& message, std::string& senderIp, int& senderPort);
 
 private:
-    int socket;
+    SOCKET socket;
     bool bound;
 };
 

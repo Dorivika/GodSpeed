@@ -4,6 +4,7 @@
 #ifdef _WIN32
     #include <winsock2.h>
     #include <ws2tcpip.h>
+    #include <cstring>
 #else
     #include <arpa/inet.h>
     #include <netinet/in.h>
@@ -14,18 +15,24 @@
 
 namespace networking {
 
-UdpSocket::UdpSocket() : socket(-1), bound(false) {
+UdpSocket::UdpSocket() : socket(INVALID_SOCKET), bound(false) {
 #ifdef _WIN32
     NetworkUtils::initializeWinsock();
 #endif
     socket = ::socket(AF_INET, SOCK_DGRAM, 0);
-    if (socket < 0) {
+    if (socket == INVALID_SOCKET) {
+#ifdef _WIN32
+        char errorMsg[256];
+        strerror_s(errorMsg, sizeof(errorMsg), errno);
+        std::cerr << "Failed to create socket: " << errorMsg << std::endl;
+#else
         std::cerr << "Failed to create socket: " << strerror(errno) << std::endl;
+#endif
     }
 }
 
 UdpSocket::~UdpSocket() {
-    if (socket >= 0) {
+    if (socket != INVALID_SOCKET) {
 #ifdef _WIN32
         closesocket(socket);
 #else
@@ -35,7 +42,7 @@ UdpSocket::~UdpSocket() {
 }
 
 bool UdpSocket::bind(int port) {
-    if (socket < 0) {
+    if (socket == INVALID_SOCKET) {
         std::cerr << "Socket not created" << std::endl;
         return false;
     }
@@ -45,8 +52,14 @@ bool UdpSocket::bind(int port) {
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
 
-    if (::bind(socket, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+    if (::bind(socket, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
+#ifdef _WIN32
+        char errorMsg[256];
+        strerror_s(errorMsg, sizeof(errorMsg), errno);
+        std::cerr << "Failed to bind socket: " << errorMsg << std::endl;
+#else
         std::cerr << "Failed to bind socket: " << strerror(errno) << std::endl;
+#endif
         return false;
     }
 
@@ -55,7 +68,7 @@ bool UdpSocket::bind(int port) {
 }
 
 bool UdpSocket::sendTo(const std::string& message, const std::string& ip, int port) {
-    if (socket < 0) {
+    if (socket == INVALID_SOCKET) {
         std::cerr << "Socket not created" << std::endl;
         return false;
     }
@@ -68,9 +81,15 @@ bool UdpSocket::sendTo(const std::string& message, const std::string& ip, int po
         return false;
     }
 
-    int result = sendto(socket, message.c_str(), message.size(), 0, (struct sockaddr*)&addr, sizeof(addr));
-    if (result < 0) {
+    int result = sendto(socket, message.c_str(), static_cast<int>(message.size()), 0, (struct sockaddr*)&addr, sizeof(addr));
+    if (result == SOCKET_ERROR) {
+#ifdef _WIN32
+        char errorMsg[256];
+        strerror_s(errorMsg, sizeof(errorMsg), errno);
+        std::cerr << "Failed to send message: " << errorMsg << std::endl;
+#else
         std::cerr << "Failed to send message: " << strerror(errno) << std::endl;
+#endif
         return false;
     }
 
@@ -78,7 +97,7 @@ bool UdpSocket::sendTo(const std::string& message, const std::string& ip, int po
 }
 
 bool UdpSocket::receive(std::string& message, std::string& senderIp, int& senderPort) {
-    if (socket < 0) {
+    if (socket == INVALID_SOCKET) {
         std::cerr << "Socket not created" << std::endl;
         return false;
     }
@@ -88,8 +107,14 @@ bool UdpSocket::receive(std::string& message, std::string& senderIp, int& sender
     socklen_t senderAddrLen = sizeof(senderAddr);
 
     int bytesRead = recvfrom(socket, buffer, sizeof(buffer) - 1, 0, (struct sockaddr*)&senderAddr, &senderAddrLen);
-    if (bytesRead < 0) {
+    if (bytesRead == SOCKET_ERROR) {
+#ifdef _WIN32
+        char errorMsg[256];
+        strerror_s(errorMsg, sizeof(errorMsg), errno);
+        std::cerr << "Failed to receive message: " << errorMsg << std::endl;
+#else
         std::cerr << "Failed to receive message: " << strerror(errno) << std::endl;
+#endif
         return false;
     }
 
