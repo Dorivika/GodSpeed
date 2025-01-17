@@ -11,33 +11,6 @@
 - **Multi-threading Support**: Built-in support for handling multiple clients concurrently.
 - **Extensibility**: Add features like TLS for secure communication.
 
-## Project Structure
-```
-NetworkingLibrary/
-├── include/          # Public headers
-│   ├── TcpServer.h
-│   ├── TcpClient.h
-│   ├── UdpSocket.h
-│   ├── NetworkUtils.h
-├── src/              # Source files
-│   ├── TcpServer.cpp
-│   ├── TcpClient.cpp
-│   ├── UdpSocket.cpp
-│   ├── NetworkUtils.cpp
-├── tests/            # Unit tests
-│   ├── Networkutils.cpp
-│   ├── TcpServerTest.cpp
-|   ├── TcpClientTest.cpp
-│   ├── UdpSocketTest.cpp
-├── examples/         # Example programs
-│   ├── TcpExample.cpp
-│   ├── UdpExample.cpp
-├── CMakeLists.txt    # Build configuration
-├── README.md         # Documentation
-├── LICENSE           # License file
-└── .gitignore        # Git ignore file
-```
-
 ## Requirements
 - C++17 or later
 - CMake (3.15 or later)
@@ -49,8 +22,8 @@ NetworkingLibrary/
 ## Building the Project
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd NetworkingLibrary
+   git clone https://github.com/Dorivika/GodSpeed.git
+   cd GodSpeed
    ```
 2. Create a build directory and navigate to it:
    ```bash
