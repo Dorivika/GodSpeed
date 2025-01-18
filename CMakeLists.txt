@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
-project(NetworkingLibrary)
+project(godspeed)
 
 set(CMAKE_CXX_STANDARD 17)
 
 # Add source files
-add_library(NetworkingLibrary
+add_library(godspeed
     src/TcpServer.cpp
     src/TcpClient.cpp
     src/UdpSocket.cpp
@@ -12,11 +12,11 @@ add_library(NetworkingLibrary
 )
 
 # Include directories
-target_include_directories(NetworkingLibrary PUBLIC include)
+target_include_directories(godspeed PUBLIC include)
 
 # Link libraries for Windows
 if (WIN32)
-    target_link_libraries(NetworkingLibrary ws2_32)
+    target_link_libraries(godspeed ws2_32)
 endif()
 
 # Add test executables
@@ -26,7 +26,7 @@ add_executable(TcpClientTest tests/TcpClientTest.cpp)
 add_executable(UdpSocketTest tests/UdpSocketTest.cpp)
 
 # Link the library to the test executables
-target_link_libraries(NetworkUtilsTest NetworkingLibrary)
-target_link_libraries(TcpServerTest NetworkingLibrary)
-target_link_libraries(TcpClientTest NetworkingLibrary)
-target_link_libraries(UdpSocketTest NetworkingLibrary)
+target_link_libraries(NetworkUtilsTest godspeed)
+target_link_libraries(TcpServerTest godspeed)
+target_link_libraries(TcpClientTest godspeed)
+target_link_libraries(UdpSocketTest godspeed)
