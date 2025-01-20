@@ -7,18 +7,22 @@
 #ifdef _WIN32
     #include <winsock2.h>
     #include <ws2tcpip.h>
+    typedef SOCKET socket_t;
+    #define INVALID_SOCKET_VALUE INVALID_SOCKET
 #else
     #include <arpa/inet.h>
     #include <netinet/in.h>
     #include <sys/socket.h>
     #include <unistd.h>
+    typedef int socket_t;
+    #define INVALID_SOCKET_VALUE -1
 #endif
 
 void clientFunction(const std::string& message, int clientId) {
     std::this_thread::sleep_for(std::chrono::seconds(1)); // Wait for server to start
 
-    SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-    assert(clientSocket != INVALID_SOCKET);
+    socket_t clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+    assert(clientSocket != INVALID_SOCKET_VALUE);
 
     struct sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
@@ -44,28 +48,17 @@ void clientFunction(const std::string& message, int clientId) {
 }
 
 int main() {
-    networking::TcpServer server(8080);
-
-    server.setMessageHandler([](int clientId, const std::string& message) {
-        std::cout << "Received from client " << clientId << ": " << message << std::endl;
-    });
-
-    assert(server.start());
-    std::cout << "Server started" << std::endl;
-
     const int numClients = 5;
-    std::vector<std::thread> clientThreads;
+    const std::string message = "Hello from client";
 
+    std::vector<std::thread> clientThreads;
     for (int i = 0; i < numClients; ++i) {
-        clientThreads.emplace_back(clientFunction, "Hello from client " + std::to_string(i), i);
+        clientThreads.emplace_back(clientFunction, message, i);
     }
 
     for (auto& thread : clientThreads) {
         thread.join();
     }
-
-    server.stop();
-    std::cout << "Server stopped" << std::endl;
 
     return 0;
 }

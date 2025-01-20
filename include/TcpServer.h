@@ -3,6 +3,7 @@
 #include <functional>
 #include <thread>
 #include <unordered_map>
+#include <mutex>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -44,6 +45,7 @@ private:
     socket_t serverSocket;
     std::thread acceptThread;
     std::unordered_map<socket_t, std::thread> clientThreads;
+    std::mutex clientsMutex;
     MessageHandler messageHandler;
 };
 

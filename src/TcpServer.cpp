@@ -2,20 +2,10 @@
 #include "NetworkUtils.h"
 #include <iostream>
 #include <cstring>
-#ifdef _WIN32
-    #include <winsock2.h>
-    #include <ws2tcpip.h>
-#else
-    #include <arpa/inet.h>
-    #include <netinet/in.h>
-    #include <sys/socket.h>
-    #include <unistd.h>
-    #include <errno.h>
-#endif
 
 namespace networking {
 
-TcpServer::TcpServer(int port) : port(port), running(false), serverSocket(INVALID_SOCKET) {
+TcpServer::TcpServer(int port) : port(port), running(false), serverSocket(INVALID_SOCKET_VALUE) {
 #ifdef _WIN32
     NetworkUtils::initializeWinsock();
 #endif
@@ -27,7 +17,7 @@ TcpServer::~TcpServer() {
 
 bool TcpServer::start() {
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (serverSocket == INVALID_SOCKET) {
+    if (serverSocket == INVALID_SOCKET_VALUE) {
         return false;
     }
 
@@ -36,11 +26,11 @@ bool TcpServer::start() {
     serverAddr.sin_addr.s_addr = INADDR_ANY;
     serverAddr.sin_port = htons(port);
 
-    if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
+    if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR_VALUE) {
         return false;
     }
 
-    if (listen(serverSocket, 5) == SOCKET_ERROR) {
+    if (listen(serverSocket, 5) == SOCKET_ERROR_VALUE) {
         return false;
     }
 
@@ -80,8 +70,8 @@ void TcpServer::acceptClients() {
         struct sockaddr_in clientAddr;
         socklen_t clientLen = sizeof(clientAddr);
         
-        SOCKET clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientLen);
-        if (clientSocket == INVALID_SOCKET) {
+        socket_t clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientLen);
+        if (clientSocket == INVALID_SOCKET_VALUE) {
             if (!running) {
                 break; // Exit the loop if the server is stopping
             }
@@ -93,7 +83,7 @@ void TcpServer::acceptClients() {
     }
 }
 
-void TcpServer::handleClient(SOCKET clientSocket, int clientId) {
+void TcpServer::handleClient(socket_t clientSocket, int clientId) {
     char buffer[4096];
     while (running) {
         int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
