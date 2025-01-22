@@ -1,104 +1,60 @@
-#include "TcpServer.h"
-#include "NetworkUtils.h"
 #include <iostream>
+#include <thread>
+#include <chrono>
+#include <cassert>
 #include <cstring>
-
-namespace networking {
-
-TcpServer::TcpServer(int port) : port(port), running(false), serverSocket(INVALID_SOCKET_VALUE) {
+#include <vector>
+#include "../include/TcpServer.h"
 #ifdef _WIN32
-    NetworkUtils::initializeWinsock();
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    typedef SOCKET socket_t;
+    #define INVALID_SOCKET_VALUE INVALID_SOCKET
+#else
+    #include <arpa/inet.h>
+    #include <netinet/in.h>
+    #include <sys/socket.h>
+    #include <unistd.h>
+    typedef int socket_t;
+    #define INVALID_SOCKET_VALUE -1
 #endif
-}
 
-TcpServer::~TcpServer() {
-    stop();
-}
+void clientFunction(const std::string& message, int clientId) {
+    std::this_thread::sleep_for(std::chrono::seconds(1)); // Wait for server to start
 
-bool TcpServer::start() {
-    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (serverSocket == INVALID_SOCKET_VALUE) {
-        return false;
+    socket_t clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (clientSocket == INVALID_SOCKET_VALUE) {
+        std::cerr << "Client " << clientId << " failed to create socket" << std::endl;
+        return;
     }
 
     struct sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = INADDR_ANY;
-    serverAddr.sin_port = htons(port);
+    serverAddr.sin_port = htons(8080);
+    inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr);
 
-    if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR_VALUE) {
-        return false;
-    }
-
-    if (listen(serverSocket, 5) == SOCKET_ERROR_VALUE) {
-        return false;
-    }
-
-    running = true;
-    acceptThread = std::thread(&TcpServer::acceptClients, this);
-    return true;
-}
-
-void TcpServer::stop() {
-    running = false;
+    int result = connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+    if (result < 0) {
+        std::cerr << "Client " << clientId << " failed to connect to server: " << strerror(errno) << std::endl;
 #ifdef _WIN32
-    closesocket(serverSocket);
+        closesocket(clientSocket);
 #else
-    close(serverSocket);
+        close(clientSocket);
 #endif
-
-    if (acceptThread.joinable()) {
-        acceptThread.join();
+        return;
     }
 
-    std::lock_guard<std::mutex> lock(clientsMutex);
-    for (auto& client : clientThreads) {
-#ifdef _WIN32
-        closesocket(client.first);
-#else
-        close(client.first);
-#endif
-        if (client.second.joinable()) {
-            client.second.join();
-        }
-    }
-    clientThreads.clear();
-}
+    send(clientSocket, message.c_str(), static_cast<int>(message.size()), 0);
 
-void TcpServer::acceptClients() {
-    while (running) {
-        struct sockaddr_in clientAddr;
-        socklen_t clientLen = sizeof(clientAddr);
-        
-        socket_t clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientLen);
-        if (clientSocket == INVALID_SOCKET_VALUE) {
-            if (!running) {
-                break; // Exit the loop if the server is stopping
-            }
-            continue;
-        }
-
-        std::lock_guard<std::mutex> lock(clientsMutex);
-        clientThreads[clientSocket] = std::thread(&TcpServer::handleClient, this, clientSocket, static_cast<int>(clientSocket));
-    }
-}
-
-void TcpServer::handleClient(socket_t clientSocket, int clientId) {
     char buffer[4096];
-    while (running) {
-        int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-        if (bytesRead <= 0) {
-            break;
-        }
-        
+    int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+    if (bytesRead > 0) {
         buffer[bytesRead] = '\0';
-        if (messageHandler) {
-            messageHandler(clientId, std::string(buffer));
-        }
+        std::cout << "Client " << clientId << " received from server: " << buffer << std::endl;
+    } else {
+        std::cerr << "Client " << clientId << " failed to receive message" << std::endl;
     }
 
-    std::lock_guard<std::mutex> lock(clientsMutex);
-    clientThreads.erase(clientSocket);
 #ifdef _WIN32
     closesocket(clientSocket);
 #else
@@ -106,12 +62,37 @@ void TcpServer::handleClient(socket_t clientSocket, int clientId) {
 #endif
 }
 
-void TcpServer::setMessageHandler(MessageHandler handler) {
-    messageHandler = std::move(handler);
+void startServer() {
+    networking::TcpServer server(8080);
+    server.setMessageHandler([](int clientId, const std::string& message) {
+        std::cout << "Server received from client " << clientId << ": " << message << std::endl;
+    });
+
+    if (!server.start()) {
+        std::cerr << "Failed to start server" << std::endl;
+        return;
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds(10)); // Keep the server running for a while
+    server.stop();
 }
 
-bool TcpServer::isRunning() const {
-    return running;
-}
+int main() {
+    std::thread serverThread(startServer);
 
-} // namespace networking
+    const int numClients = 5;
+    const std::string message = "Hello from client";
+
+    std::vector<std::thread> clientThreads;
+    for (int i = 0; i < numClients; ++i) {
+        clientThreads.emplace_back(clientFunction, message, i);
+    }
+
+    for (auto& thread : clientThreads) {
+        thread.join();
+    }
+
+    serverThread.join();
+
+    return 0;
+}
