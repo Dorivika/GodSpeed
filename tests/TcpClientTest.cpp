@@ -32,7 +32,10 @@ int main() {
         std::cout << "Server received from client " << clientId << ": " << message << std::endl;
     });
 
-    assert(server.start());
+    if (!server.start()) {
+        std::cerr << "Failed to start server" << std::endl;
+        return 1;
+    }
     std::cout << "Server started" << std::endl;
 
     const int numClients = 5;
@@ -47,7 +50,5 @@ int main() {
     }
 
     server.stop();
-    std::cout << "Server stopped" << std::endl;
-
     return 0;
 }

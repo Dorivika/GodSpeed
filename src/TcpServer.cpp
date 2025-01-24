@@ -28,6 +28,7 @@ TcpServer::~TcpServer() {
 bool TcpServer::start() {
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket == INVALID_SOCKET_VALUE) {
+        std::cerr << "Failed to create server socket: " << strerror(errno) << std::endl;
         return false;
     }
 
@@ -37,10 +38,12 @@ bool TcpServer::start() {
     serverAddr.sin_port = htons(port);
 
     if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR_VALUE) {
+        std::cerr << "Failed to bind server socket: " << strerror(errno) << std::endl;
         return false;
     }
 
     if (listen(serverSocket, 5) == SOCKET_ERROR_VALUE) {
+        std::cerr << "Failed to listen on server socket: " << strerror(errno) << std::endl;
         return false;
     }
 
