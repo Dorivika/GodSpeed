@@ -3,7 +3,7 @@ project(godspeed)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# Add source files
+# Create library from sources, including TcpServer
 add_library(godspeed
     src/TcpServer.cpp
     src/TcpClient.cpp
@@ -11,22 +11,25 @@ add_library(godspeed
     src/NetworkUtils.cpp
 )
 
-# Include directories
-target_include_directories(godspeed PUBLIC include)
+# Include your headers
+target_include_directories(godspeed
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
-# Link libraries for Windows
-if (WIN32)
+# Windows-specific libraries
+if(WIN32)
     target_link_libraries(godspeed ws2_32)
 endif()
 
-# Add test executables
+# Executables
 add_executable(NetworkUtilsTest tests/NetworkUtilsTest.cpp)
 add_executable(TcpServerTest tests/TcpServerTest.cpp)
 add_executable(TcpClientTest tests/TcpClientTest.cpp)
 add_executable(UdpSocketTest tests/UdpSocketTest.cpp)
 
-# Link the library to the test executables
+# Link them against the godspeed library
 target_link_libraries(NetworkUtilsTest godspeed)
-target_link_libraries(TcpServerTest godspeed)
-target_link_libraries(TcpClientTest godspeed)
-target_link_libraries(UdpSocketTest godspeed)
+target_link_libraries(TcpServerTest  godspeed)
+target_link_libraries(TcpClientTest  godspeed)
+target_link_libraries(UdpSocketTest  godspeed)
