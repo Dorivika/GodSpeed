@@ -9,15 +9,10 @@
 - **UDP Socket**: Send and receive datagrams with ease.
 - **Event-Driven Architecture**: Efficiently manage events and I/O operations.
 - **Multi-threading Support**: Built-in support for handling multiple clients concurrently.
-- **Extensibility**: Add features like TLS for secure communication.
 
 ## Requirements
 - C++17 or later
 - CMake (3.15 or later)
-- Optional:
-  - Boost.Asio or standalone Asio for advanced networking features
-  - OpenSSL for TLS support
-  - Google Test for unit testing
 
 ## Building the Project
 1. Clone the repository:
@@ -52,15 +47,6 @@ This will start a simple TCP server.
 ./examples/UdpExample
 ```
 This will demonstrate basic UDP communication.
-
-## Writing Tests
-Unit tests are located in the `tests` directory and use the Google Test framework.
-
-To build and run tests:
-```bash
-make test
-./tests/YourTestExecutable
-```
 
 ## Future Extensions
 - Add TLS support using OpenSSL.
