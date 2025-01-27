@@ -38,9 +38,15 @@ After building the project, you can run the example programs located in the `exa
 
 ### Running the TCP Example
 ```bash
-./examples/TcpExample
+g++ -std=c++17 -Iinclude -o TcpServerExample examples/TcpServerExample.cpp src/TcpServer.cpp src/NetworkUtils.cpp -lws2_32 -lpthread
 ```
 This will start a simple TCP server.
+
+```bash
+g++ -std=c++17 -Iinclude -o TcpClientExample examples/TcpClientExample.cpp src/TcpClient.cpp src/NetworkUtils.cpp -lws2_32 -lpthread
+```
+This will start a simple TCP client.
+
 
 ### Running the UDP Example
 ```bash
