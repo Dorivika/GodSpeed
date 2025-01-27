@@ -1,7 +1,7 @@
 # GodSpeed
 
 ## Overview
-**GodSpeed** is a C++ library designed to simplify the implementation of networking functionalities such as TCP and UDP communication. The library is designed with modularity, scalability, and adherence to professional C++ project norms, making it a great choice for both learning and real-world applications.
+**GodSpeed** is a C++ library designed to simplify the implementation of networking functionalities such as TCP and UDP communication on both Windows and Linux.
 
 ## Features
 - **TCP Server**: Handle multiple clients with a robust and scalable architecture.
