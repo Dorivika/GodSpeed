@@ -48,12 +48,6 @@ g++ -std=c++17 -Iinclude -o TcpClientExample examples/TcpClientExample.cpp src/T
 This will start a simple TCP client.
 
 
-### Running the UDP Example
-```bash
-./examples/UdpExample
-```
-This will demonstrate basic UDP communication.
-
 ## Future Extensions
 - Add TLS support using OpenSSL.
 - Implement a thread pool for efficient resource management.
