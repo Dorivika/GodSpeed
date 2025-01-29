@@ -2,6 +2,8 @@
 #include <string>
 #include <functional>
 #include <thread>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 namespace networking {
 
@@ -11,20 +13,25 @@ public:
     ~TcpClient();
 
     bool connect(const std::string& serverIp, int port);
-    void disconnect();
     bool send(const std::string& message);
+    void disconnect();
     bool isConnected() const;
 
-    using MessageHandler = std::function<void(const std::string& message)>;
+    using MessageHandler = std::function<void(const std::string&)>;
     void setMessageHandler(MessageHandler handler);
 
 private:
     void receiveMessages();
-    
+    bool initializeSSL();
+    void cleanupSSL();
+
     int clientSocket;
     bool connected;
     std::thread receiveThread;
     MessageHandler messageHandler;
+
+    SSL_CTX* sslCtx;
+    SSL* ssl;
 };
 
 } // namespace networking
