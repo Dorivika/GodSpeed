@@ -3,6 +3,9 @@ project(godspeed VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Find OpenSSL
+find_package(OpenSSL REQUIRED)
+
 # Create library from sources
 add_library(godspeed
     src/TcpServer.cpp
@@ -15,11 +18,14 @@ add_library(godspeed
 target_include_directories(godspeed PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+    ${OPENSSL_INCLUDE_DIR}
 )
 
 # Link libraries for Windows
 if(WIN32)
-    target_link_libraries(godspeed ws2_32)
+    target_link_libraries(godspeed ws2_32 OpenSSL::SSL OpenSSL::Crypto)
+else()
+    target_link_libraries(godspeed OpenSSL::SSL OpenSSL::Crypto)
 endif()
 
 # Installation rules
