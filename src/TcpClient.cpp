@@ -14,14 +14,40 @@
 
 namespace networking {
 
-TcpClient::TcpClient() : clientSocket(-1), connected(false) {
+TcpClient::TcpClient() : clientSocket(-1), connected(false), sslCtx(nullptr), ssl(nullptr) {
 #ifdef _WIN32
     NetworkUtils::initializeWinsock();
 #endif
+    initializeSSL();
 }
 
 TcpClient::~TcpClient() {
     disconnect();
+    cleanupSSL();
+}
+
+bool TcpClient::initializeSSL() {
+    SSL_load_error_strings();
+    OpenSSL_add_ssl_algorithms();
+
+    sslCtx = SSL_CTX_new(TLS_client_method());
+    if (!sslCtx) {
+        std::cerr << "Failed to create SSL context" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+void TcpClient::cleanupSSL() {
+    if (ssl) {
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
+    }
+    if (sslCtx) {
+        SSL_CTX_free(sslCtx);
+    }
+    EVP_cleanup();
 }
 
 bool TcpClient::connect(const std::string& serverIp, int port) {
@@ -42,6 +68,14 @@ bool TcpClient::connect(const std::string& serverIp, int port) {
         return false;
     }
 
+    ssl = SSL_new(sslCtx);
+    SSL_set_fd(ssl, clientSocket);
+
+    if (SSL_connect(ssl) <= 0) {
+        std::cerr << "Failed to establish SSL connection" << std::endl;
+        return false;
+    }
+
     connected = true;
     receiveThread = std::thread(&TcpClient::receiveMessages, this);
     return true;
@@ -58,17 +92,23 @@ void TcpClient::disconnect() {
     if (receiveThread.joinable()) {
         receiveThread.join();
     }
+
+    if (ssl) {
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
+        ssl = nullptr;
+    }
 }
 
 bool TcpClient::send(const std::string& message) {
     if (!connected) return false;
-    return ::send(clientSocket, message.c_str(), message.length(), 0) >= 0;
+    return SSL_write(ssl, message.c_str(), message.length()) > 0;
 }
 
 void TcpClient::receiveMessages() {
     char buffer[4096];
     while (connected) {
-        int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer) - 1);
         if (bytesRead <= 0) {
             break;
         }
@@ -88,4 +128,4 @@ bool TcpClient::isConnected() const {
     return connected;
 }
 
-}
+} // namespace networking
